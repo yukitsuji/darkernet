@@ -2,6 +2,7 @@
 Embedded Deep Learning Framework
 
 This framework is mainly for Object Detection and Tracking  
+Most code is from excellent darknet  
 
 ### Initial Version
 - All GPU, CUDNN (for research)
@@ -13,5 +14,3 @@ This framework is mainly for Object Detection and Tracking
 ### Second Version
 - Embedded deep learning  
 - TPU 
-
-Most code is from excellent darknet.
