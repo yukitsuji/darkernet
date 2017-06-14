@@ -430,19 +430,26 @@ float *network_predict(network net, float *input)
 {
 #ifdef GPU
     if(gpu_index >= 0)  return network_predict_gpu(net, input);
-#endif
+#else
     net.input = input;
     net.truth = 0;
     net.train = 0;
     net.delta = 0;
     forward_network(net);
     return net.output;
+#endif
 }
 
 void network_inference(network net, float *input)
 {
 #ifdef GPU
-    if(gpu_index >= 0)  network_predict_gpu(net, input);
+    if(gpu_index >= 0)  network_inference_gpu(net, input);
+#else
+    net.input = input;
+    net.truth = 0;
+    net.train = 0;
+    net.delta = 0;
+    forward_network(net);
 #endif
 }
 

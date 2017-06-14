@@ -1,12 +1,5 @@
 #include "darknet.h"
 #include <sys/time.h>
-#ifdef __cplusplus
-extern "C" {
-  #include "fp16_emu.h"
-  // #include "myhalf.h"
-}
-#endif
-
 
 static int coco_ids[] = {1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18,19,20,21,22,23,24,25,27,28,31,32,33,34,35,36,37,38,39,40,41,42,43,44,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,67,70,72,73,74,75,76,77,78,79,80,81,82,84,85,86,87,88,89,90};
 
@@ -101,27 +94,27 @@ void train_detector(char *datacfg, char *cfgfile, char *weightfile, int *gpus, i
         load_thread = load_data(args);
 
         /*
-        int k;
-        for(k = 0; k < l.max_boxes; ++k){
-            box b = float_to_box(train.y.vals[10] + 1 + k*5);
-            if(!b.x) break;
-            printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
-        }
-        */
-        /*
-        int zz;
-        for(zz = 0; zz < train.X.cols; ++zz){
-            image im = float_to_image(net.w, net.h, 3, train.X.vals[zz]);
-            int k;
-            for(k = 0; k < l.max_boxes; ++k){
-                box b = float_to_box(train.y.vals[zz] + k*5);
-                printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
-                draw_bbox(im, b, 1, 1,0,0);
-            }
-            show_image(im, "truth11");
-            cvWaitKey(0);
-            save_image(im, "truth11");
-        }
+          int k;
+          for(k = 0; k < l.max_boxes; ++k){
+              box b = float_to_box(train.y.vals[10] + 1 + k*5);
+              if(!b.x) break;
+              printf("loaded: %f %f %f %f\n", b.x, b.y, b.w, b.h);
+          }
+          */
+          /*
+          int zz;
+          for(zz = 0; zz < train.X.cols; ++zz){
+              image im = float_to_image(net.w, net.h, 3, train.X.vals[zz]);
+              int k;
+              for(k = 0; k < l.max_boxes; ++k){
+                  box b = float_to_box(train.y.vals[zz] + k*5);
+                  printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+                  draw_bbox(im, b, 1, 1,0,0);
+              }
+              show_image(im, "truth11");
+              cvWaitKey(0);
+              save_image(im, "truth11");
+          }
         */
 
         printf("Loaded: %lf seconds\n", sec(clock()-time));
@@ -588,94 +581,89 @@ void validate_detector_recall(char *cfgfile, char *weightfile)
     }
 }
 
+/*
+  void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
+  {
+      list *options = read_data_cfg(datacfg);
+      char *name_list = option_find_str(options, "names", "data/names.list");
+      char **names = get_labels(name_list);
+
+      image **alphabet = load_alphabet();
+      network net = parse_network_cfg(cfgfile);
+      if(weightfile){
+          load_weights(&net, weightfile);
+      }
+      set_batch_network(&net, 1);
+      srand(2222222);
+      clock_t time;
+      char buff[256];
+      char *input = buff;
+      int j;
+      float nms=.4;
+      while(1){
+          if(filename){
+              strncpy(input, filename, 256);
+          } else {
+              printf("Enter Image Path: ");
+              fflush(stdout);
+              input = fgets(input, 256, stdin);
+              if(!input) return;
+              strtok(input, "\n");
+          }
+          image im = load_image_color(input,0,0);
+          image sized = letterbox_image(im, net.w, net.h);
+
+          //image sized = resize_image(im, net.w, net.h);
+          //image sized2 = resize_max(im, net.w);
+          //image sized = crop_image(sized2, -((net.w - sized2.w)/2), -((net.h - sized2.h)/2), net.w, net.h);
+          //resize_network(&net, sized.w, sized.h);
+          layer l = net.layers[net.n-1];
+
+          box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
+          float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
+          for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
+
+          float *X = sized.data;
+          sleep(5);
+
+          time=clock();
+          network_predict(net, X); // TODO: ADD Batch Normalize Layer of CUDNN.
+          printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
+          time = clock();
+          get_region_boxes(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh, 1);
+          printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
+          time = clock();
+          if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
+          printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
+          free_network(net);
+          draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
+          if(outfile){
+              save_image(im, outfile);
+          }
+          else{
+              save_image(im, "predictions");
+  #ifdef OPENCV
+              cvNamedWindow("predictions", CV_WINDOW_NORMAL);
+              if(fullscreen){
+                  cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+              }
+              show_image(im, "predictions");
+              cvWaitKey(0);
+              cvDestroyAllWindows();
+  #endif
+          }
+
+          free_image(im);
+          free_image(sized);
+          free(boxes);
+          free_ptrs((void **)probs, l.w*l.h*l.n);
+
+          if (filename) break;
+      }
+  }
+*/
+
 void test_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
-{
-    list *options = read_data_cfg(datacfg);
-    char *name_list = option_find_str(options, "names", "data/names.list");
-    char **names = get_labels(name_list);
-
-    image **alphabet = load_alphabet();
-    network net = parse_network_cfg(cfgfile);
-    if(weightfile){
-        load_weights(&net, weightfile);
-    }
-    set_batch_network(&net, 1);
-    srand(2222222);
-    clock_t time;
-    char buff[256];
-    char *input = buff;
-    int j;
-    float nms=.4;
-    while(1){
-        if(filename){
-            strncpy(input, filename, 256);
-        } else {
-            printf("Enter Image Path: ");
-            fflush(stdout);
-            input = fgets(input, 256, stdin);
-            if(!input) return;
-            strtok(input, "\n");
-        }
-        image im = load_image_color(input,0,0);
-        image sized = letterbox_image(im, net.w, net.h);
-
-        //image sized = resize_image(im, net.w, net.h);
-        //image sized2 = resize_max(im, net.w);
-        //image sized = crop_image(sized2, -((net.w - sized2.w)/2), -((net.h - sized2.h)/2), net.w, net.h);
-        //resize_network(&net, sized.w, sized.h);
-        layer l = net.layers[net.n-1];
-
-        box *boxes = calloc(l.w*l.h*l.n, sizeof(box));
-        float **probs = calloc(l.w*l.h*l.n, sizeof(float *));
-        for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
-
-        float *X = sized.data;
-        sleep(5);
-
-        time=clock();
-        network_predict(net, X);
-        printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        // TODO: CUDA Implementation -> network化
-        time = clock();
-        get_region_boxes_gpu(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh, 1);
-        printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        time = clock();
-        if (nms) do_nms_obj(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-
-        printf("NMS Boxes %d\n", l.w*l.h*l.n);
-        printf("Output Boxes %ld\n", sizeof(l));
-        printf("Network Size %d %d %d %d\n", l.w, l.h, l.n, l.classes);
-        printf("Batch %d\n", l.batch);
-        free_network(net);
-        //else if (nms) do_nms_sort(boxes, probs, l.w*l.h*l.n, l.classes, nms);
-        draw_detections(im, l.w*l.h*l.n, thresh, boxes, probs, names, alphabet, l.classes);
-        if(outfile){
-            save_image(im, outfile);
-        }
-        else{
-            save_image(im, "predictions");
-#ifdef OPENCV
-            cvNamedWindow("predictions", CV_WINDOW_NORMAL);
-            if(fullscreen){
-                cvSetWindowProperty("predictions", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-            }
-            show_image(im, "predictions");
-            cvWaitKey(0);
-            cvDestroyAllWindows();
-#endif
-        }
-
-        free_image(im);
-        free_image(sized);
-        free(boxes);
-        free_ptrs((void **)probs, l.w*l.h*l.n);
-
-        if (filename) break;
-    }
-}
-
-void inference_detector(char *datacfg, char *cfgfile, char *weightfile, char *filename, float thresh, float hier_thresh, char *outfile, int fullscreen)
 {
     list *options = read_data_cfg(datacfg);
     char *name_list = option_find_str(options, "names", "data/names.list");
@@ -718,12 +706,10 @@ void inference_detector(char *datacfg, char *cfgfile, char *weightfile, char *fi
         for(j = 0; j < l.w*l.h*l.n; ++j) probs[j] = calloc(l.classes + 1, sizeof(float *));
 
         float *X = sized.data;
-        sleep(5);
 
         time=clock();
-        network_predict(net, X);
+        network_inference(net, X);
         printf("%s: Predicted in %f seconds.\n", input, sec(clock()-time));
-        // TODO: CUDA Implementation -> network化
         time = clock();
         get_region_boxes_gpu(l, im.w, im.h, net.w, net.h, thresh, probs, boxes, 0, 0, hier_thresh, 1);
         printf("%s: Converter in %f seconds.\n", input, sec(clock()-time));

@@ -469,9 +469,9 @@ void get_region_boxes_gpu(layer l, int w, int h, int netw, int neth, float thres
 
 void forward_region_layer_gpu(const layer l, network net)
 {
-    clock_t time;
-    char buff[256];
-    char *input = buff;
+    // clock_t time;
+    // char buff[256];
+    // char *input = buff;
     // time=clock();
     copy_ongpu(l.batch*l.inputs, net.input_gpu, 1, l.output_gpu, 1);
     int b, n;
@@ -493,9 +493,9 @@ void forward_region_layer_gpu(const layer l, network net)
     }
     // printf("%s: region in %f seconds.\n", input, sec(clock()-time));
     if(!net.train || l.onlyforward){
-        time = clock();
+        // time = clock();
         cuda_pull_array(l.output_gpu, l.output, l.batch*l.outputs);
-        printf("%s: region in %f seconds.\n", input, sec(clock()-time));
+        // printf("%s: region in %f seconds.\n", input, sec(clock()-time));
         return;
     }
 

@@ -14,6 +14,7 @@ float train_networks(network *nets, int n, data d, int interval);
 void sync_nets(network *nets, int n, int interval);
 float train_network_datum_gpu(network net);
 float *network_predict_gpu(network net, float *input);
+void network_inference_gpu(network net, float *input);
 void pull_network_output(network net);
 void forward_network_gpu(network net);
 void backward_network_gpu(network net);
@@ -38,6 +39,7 @@ float train_network_datum(network net);
 
 matrix network_predict_data(network net, data test);
 float *network_predict(network net, float *input);
+void network_inference(network net, float *input);
 float network_accuracy(network net, data d);
 float *network_accuracies(network net, data d, int n);
 float network_accuracy_multi(network net, data d, int n);
@@ -53,4 +55,3 @@ void set_batch_network(network *net, int b);
 void calc_network_cost(network net);
 
 #endif
-
