@@ -1,17 +1,8 @@
-# darkernet
-Embedded Deep Learning Framework
+![Darknet Logo](http://pjreddie.com/media/files/darknet-black-small.png)
 
-This framework is mainly for Object Detection and Tracking  
+#Darknet#
+Darknet is an open source neural network framework written in C and CUDA. It is fast, easy to install, and supports CPU and GPU computation.
 
-### Initial Version
-- All GPU, CUDNN (for research)
-- Convolutional Neural Network  
-- Reccurent Neural Network  
-- Batch Normalization
-- Flexibility
+For more information see the [Darknet project website](http://pjreddie.com/darknet).
 
-### Second Version
-- Embedded deep learning  
-- TPU 
-
-Most code is from excellent darknet.
+For questions or issues please use the [Google Group](https://groups.google.com/forum/#!forum/darknet).
